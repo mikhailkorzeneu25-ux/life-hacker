@@ -1,11 +1,12 @@
 import streamlit as st
-import random
+import requests
+import json
 
-# Page config
-st.set_page_config(page_title="Cat Bot 🐱", page_icon="🐾")
+# Page settings
+st.set_page_config(page_title="My AI Chatbot", page_icon="🤖")
 
-st.title("🐱 Cat Bot")
-st.write("Hi! I'm Cat Bot. Ask me something about cats!")
+st.title("🤖 My AI Chatbot")
+st.write("Powered by Local AI (No API Key Needed)")
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -16,51 +17,36 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Function to generate cat responses
-def get_cat_response(user_input):
-    user_input = user_input.lower()
+# Function to talk to Ollama
+def get_ai_response(prompt):
+    url = "http://localhost:11434/api/generate"
 
-    responses = {
-        "food": [
-            "Cats love tuna! 🐟",
-            "Dry food is good, but wet food keeps cats hydrated!",
-            "Treats are great... but not too many! 😸"
-        ],
-        "sleep": [
-            "Cats sleep 12–16 hours a day! 😴",
-            "If your cat sleeps a lot, that's normal!",
-        ],
-        "play": [
-            "Cats love chasing laser pointers! 🔴",
-            "Try a feather toy — they go crazy for it!",
-        ],
-        "name": [
-            "You can name your cat Luna, Milo, or Whiskers! 🐾",
-            "Shadow is a cool cat name!",
-        ]
+    data = {
+        "model": "llama3",
+        "prompt": prompt,
+        "stream": False
     }
 
-    for keyword in responses:
-        if keyword in user_input:
-            return random.choice(responses[keyword])
+    response = requests.post(url, json=data)
+    response_json = response.json()
 
-    return "Meow! 🐱 I don't know about that, but I love naps and snacks!"
+    return response_json["response"]
 
 # User input
-prompt = st.chat_input("Ask something about cats...")
+if prompt := st.chat_input("Type your message..."):
 
-if prompt:
-    # Save user message
+    # Show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
-
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Generate bot response
-    response = get_cat_response(prompt)
-
-    # Save bot response
-    st.session_state.messages.append({"role": "assistant", "content": response})
-
+    # Get AI response
     with st.chat_message("assistant"):
-        st.markdown(response)
+        with st.spinner("Thinking..."):
+            ai_response = get_ai_response(prompt)
+            st.markdown(ai_response)
+
+    # Save AI response
+    st.session_state.messages.append(
+        {"role": "assistant", "content": ai_response}
+    )
