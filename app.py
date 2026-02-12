@@ -3,7 +3,7 @@ import requests
 import json
 
 # Page settings
-st.set_page_config(page_title="My AI Chatbot", page_icon="🤖")
+st.set_page_config(page_title="life hacker chat bot", page_icon="🤖")
 
 st.title("🤖 My AI Chatbot")
 st.write("Powered by Local AI (No API Key Needed)")
