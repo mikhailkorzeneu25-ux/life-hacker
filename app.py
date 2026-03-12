@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import time
 
 # -----------------------------
 # Page Settings
@@ -14,36 +13,37 @@ st.title("🤖 Life Hacker AI")
 st.write("Ask for productivity, study, or life advice.")
 
 # -----------------------------
-# HuggingFace API
+# OpenRouter API
 # -----------------------------
-API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
+API_KEY = "YOUR_OPENROUTER_API_KEY"
 
-# IMPORTANT: add your HuggingFace token
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
 headers = {
-    "Authorization": "Bearer YOUR_HUGGINGFACE_API_KEY"
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json"
 }
 
 # -----------------------------
-# AI response function
+# AI Response Function
 # -----------------------------
 def get_ai_response(prompt):
 
-    payload = {
-        "inputs": f"You are a helpful life coach chatbot.\nUser: {prompt}\nAssistant:"
+    data = {
+        "model": "mistralai/mistral-7b-instruct",
+        "messages": [
+            {"role": "system", "content": "You are a helpful life coach giving productivity and life advice."},
+            {"role": "user", "content": prompt}
+        ]
     }
 
-    for i in range(5):  # retry if model is loading
-        response = requests.post(API_URL, headers=headers, json=payload)
+    response = requests.post(API_URL, headers=headers, json=data)
 
-        if response.status_code == 200:
-            result = response.json()
-            return result[0]["generated_text"]
+    if response.status_code == 200:
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
 
-        # If model is loading
-        if response.status_code == 503:
-            time.sleep(3)
-
-    return "⚠️ AI is busy right now. Please try again."
+    return "⚠️ AI failed to respond."
 
 # -----------------------------
 # Chat History
@@ -51,7 +51,6 @@ def get_ai_response(prompt):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
@@ -63,22 +62,14 @@ prompt = st.chat_input("Ask for a life hack...")
 
 if prompt:
 
-    # Show user message
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # AI response
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            ai_response = get_ai_response(prompt)
-            st.markdown(ai_response)
+            reply = get_ai_response(prompt)
+            st.markdown(reply)
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": ai_response
-    })
+    st.session_state.messages.append({"role": "assistant", "content": reply})
