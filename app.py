@@ -1,74 +1,68 @@
 import streamlit as st
+import requests
 
-# Page config
+# -----------------------------
+# Page settings
+# -----------------------------
 st.set_page_config(
-    page_title="Life Hacker Chat Bot",
+    page_title="Life Hacker AI",
     page_icon="🤖"
 )
 
-st.title("🤖 Life Hacker Chat Bot")
-st.write("Smart productivity and life tips")
+st.title("🤖 Life Hacker AI")
+st.write("Ask for productivity, study, or life advice.")
 
-# Initialize chat history
+# -----------------------------
+# HuggingFace model API
+# -----------------------------
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
+
+headers = {}
+
+def get_ai_response(prompt):
+
+    payload = {
+        "inputs": f"You are a helpful life coach chatbot. Give helpful life advice.\nUser: {prompt}\nAssistant:"
+    }
+
+    response = requests.post(API_URL, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        result = response.json()
+        return result[0]["generated_text"]
+
+    return "⚠️ AI is loading. Try again in a few seconds."
+
+# -----------------------------
+# Chat history
+# -----------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Function for chatbot responses
-def get_ai_response(prompt):
-
-    prompt = prompt.lower()
-
-    if "study" in prompt:
-        return "📚 Try the Pomodoro technique: 25 minutes study, 5 minutes break."
-
-    elif "productivity" in prompt:
-        return "⚡ Start your day with the most important task first."
-
-    elif "sleep" in prompt:
-        return "😴 Avoid screens 1 hour before bedtime."
-
-    elif "motivation" in prompt:
-        return "🔥 Discipline beats motivation. Build small daily habits."
-
-    elif "exercise" in prompt:
-        return "💪 Even 10 minutes of movement daily improves health."
-
-    elif "focus" in prompt:
-        return "🎯 Remove distractions and work in short focused sprints."
-
-    elif "time management" in prompt:
-        return "⏰ Use the 2-minute rule: if it takes less than 2 minutes, do it now."
-
-    else:
-        return "🤖 Try asking about: study, productivity, sleep, focus, exercise, or motivation."
-
-# Display chat history
+# Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# -----------------------------
 # Chat input
+# -----------------------------
 prompt = st.chat_input("Ask for a life hack...")
 
 if prompt:
 
-    # Save user message
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+    # Show user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Generate response
-    response = get_ai_response(prompt)
+    # Get AI response
+    with st.spinner("Thinking..."):
+        response = get_ai_response(prompt)
 
-    # Save bot message
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": response
-    })
+    # Show AI response
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
     with st.chat_message("assistant"):
         st.markdown(response)
